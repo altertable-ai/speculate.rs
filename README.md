@@ -27,22 +27,22 @@ Speculate provides the `speculate!` syntax extension.
 Inside `speculate! { ... }`, you can have any "Item", like `static`, `const`,
 `fn`, etc, and 5 special types of blocks:
 
-* `describe` (or its alias `context`) - to group tests in a hierarchy, for
+- `describe` (or its alias `context`) - to group tests in a hierarchy, for
   readability. Can be arbitrarily nested.
 
-* `before` - contains setup code that's inserted before every sibling and nested
-  `it` and `bench` blocks.
+- `before` - contains setup code that's inserted before every sibling and nested
+  `it` blocks.
 
-* `after` - contains teardown code that's inserted after every sibling and
-  nested `it` and `bench` blocks.
+- `after` - contains teardown code that's inserted after every sibling and
+  nested `it` blocks.
 
-* `it` (or its alias `test`) - contains tests.
+- `it` (or its alias `test`) - contains tests.
 
   For example:
 
   ```rust
-  it "can add 1 and 2" {
-      assert_eq!(1 + 2, 3);
+  it can_add_1_and_2 {
+    assert_eq!(1 + 2, 3);
   }
   ```
 
@@ -50,28 +50,18 @@ Inside `speculate! { ... }`, you can have any "Item", like `static`, `const`,
 
   ```rust
   #[ignore]
-  test "ignore" {
-      assert_eq!(1, 2);
+  test ignore {
+    assert_eq!(1, 2);
   }
 
   #[should_panic]
-  test "should panic" {
-      assert_eq!(1, 2);
+  test should_panic {
+    assert_eq!(1, 2);
   }
 
   #[should_panic(expected = "foo")]
-  test "should panic with foo" {
-      panic!("foo");
-  }
-  ```
-
-* `bench` - contains benchmarks.
-
-  For example:
-
-  ```rust
-  bench "xor 1 to 1000" |b| {
-      b.iter(|| (0..1000).fold(0, |a, b| a ^ b));
+  test should_panic_with_foo {
+    panic!("foo");
   }
   ```
 
@@ -83,33 +73,33 @@ extern crate speculate;
 use speculate::speculate;
 
 speculate! {
-    const ZERO: i32 = 0;
+  const ZERO: i32 = 0;
 
-    fn add(a: i32, b: i32) -> i32 {
-        a + b
+  fn add(a: i32, b: i32) -> i32 {
+    a + b
+  }
+
+  describe "math" {
+    const ONE: i32 = 1;
+
+    fn sub(a: i32, b: i32) -> i32 {
+      a - b
     }
 
-    describe "math" {
-        const ONE: i32 = 1;
-
-        fn sub(a: i32, b: i32) -> i32 {
-            a - b
-        }
-
-        before {
-            let two = ONE + ONE;
-        }
-
-        it "can add stuff" {
-            assert_eq!(ONE, add(ZERO, ONE));
-            assert_eq!(two, add(ONE, ONE));
-        }
-
-        it "can subtract stuff" {
-            assert_eq!(ZERO, sub(ONE, ONE));
-            assert_eq!(ONE, sub(two, ONE));
-        }
+    before {
+      let two = ONE + ONE;
     }
+
+    it can_add_stuff {
+      assert_eq!(ONE, add(ZERO, ONE));
+      assert_eq!(two, add(ONE, ONE));
+    }
+
+    it can_subtract_stuff {
+      assert_eq!(ZERO, sub(ONE, ONE));
+      assert_eq!(ONE, sub(two, ONE));
+    }
+  }
 }
 ```
 

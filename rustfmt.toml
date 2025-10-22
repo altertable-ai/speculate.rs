@@ -1,0 +1,4 @@
+hard_tabs = false
+tab_spaces = 2
+format_macro_bodies = true
+format_macro_matchers = true
