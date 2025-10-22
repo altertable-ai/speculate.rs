@@ -1,8 +1,0 @@
-language: rust
-
-matrix:
-  include:
-    - rust: stable
-      script:
-        - cargo build --verbose
-        - cargo test --verbose
