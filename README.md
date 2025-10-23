@@ -1,14 +1,16 @@
-# speculate.rs [![Build Status](https://travis-ci.org/utkarshkukreti/speculate.rs.svg?branch=master)](https://travis-ci.org/utkarshkukreti/speculate.rs) [![speculate at crates.io](https://img.shields.io/crates/v/speculate.svg)](https://crates.io/crates/speculate)
+# speculate.rs [![Build Status](https://github.com/altertable-ai/speculate.rs/workflows/CI/badge.svg)](https://github.com/altertable-ai/speculate.rs/actions)
 
 > An RSpec inspired minimal testing framework for Rust.
 
+This is a fork of the original [speculate.rs](https://github.com/utkarshkukreti/speculate.rs) by [@utkarshkukreti](https://github.com/utkarshkukreti), now maintained by the [Altertable.ai](https://altertable.ai) team.
+
 ## Installation
 
-Add `speculate` to the `dev-dependencies` section of your `Cargo.toml`:
+Since this crate is not yet published to crates.io, add `speculate` to the `dev-dependencies` section of your `Cargo.toml` using the GitHub repository:
 
 ```toml
 [dev-dependencies]
-speculate = "0.1"
+speculate = { git = "https://github.com/altertable-ai/speculate.rs" }
 ```
 
 And add the following to the top of the Rust file you want to add tests for:
@@ -51,17 +53,17 @@ Inside `speculate! { ... }`, you can have any "Item", like `static`, `const`,
   ```rust
   #[ignore]
   test ignore {
-    assert_eq!(1, 2);
+      assert_eq!(1, 2);
   }
 
   #[should_panic]
   test should_panic {
-    assert_eq!(1, 2);
+      assert_eq!(1, 2);
   }
 
   #[should_panic(expected = "foo")]
   test should_panic_with_foo {
-    panic!("foo");
+      panic!("foo");
   }
   ```
 
@@ -73,36 +75,50 @@ extern crate speculate;
 use speculate::speculate;
 
 speculate! {
-  const ZERO: i32 = 0;
+    const ZERO: i32 = 0;
 
-  fn add(a: i32, b: i32) -> i32 {
-    a + b
-  }
-
-  describe "math" {
-    const ONE: i32 = 1;
-
-    fn sub(a: i32, b: i32) -> i32 {
-      a - b
+    fn add(a: i32, b: i32) -> i32 {
+        a + b
     }
 
-    before {
-      let two = ONE + ONE;
-    }
+    describe "math" {
+        const ONE: i32 = 1;
 
-    it can_add_stuff {
-      assert_eq!(ONE, add(ZERO, ONE));
-      assert_eq!(two, add(ONE, ONE));
-    }
+        fn sub(a: i32, b: i32) -> i32 {
+            a - b
+        }
 
-    it can_subtract_stuff {
-      assert_eq!(ZERO, sub(ONE, ONE));
-      assert_eq!(ONE, sub(two, ONE));
+        before {
+            let two = ONE + ONE;
+        }
+
+        it can_add_stuff {
+            assert_eq!(ONE, add(ZERO, ONE));
+            assert_eq!(two, add(ONE, ONE));
+        }
+
+        it can_subtract_stuff {
+            assert_eq!(ZERO, sub(ONE, ONE));
+            assert_eq!(ONE, sub(two, ONE));
+        }
+
+        context "nested context with additional details" {
+            before {
+              let three = two + ONE;
+            }
+
+            it can_add_stuff_in_nested_context {
+                    assert_eq!(three, add(two, ONE));
+            }
+        }
     }
-  }
 }
 ```
 
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
 ## License
 
-MIT
+MIT License - see the [LICENSE](LICENSE) file for details.
