@@ -31,11 +31,11 @@ speculate! {
 
         context "nested context with additional details" {
             before {
-              let three = two + ONE;
+                let three = two + ONE;
             }
 
             it can_add_stuff_in_nested_context {
-                    assert_eq!(three, add(two, ONE));
+                assert_eq!(three, add(two, ONE));
             }
         }
     }

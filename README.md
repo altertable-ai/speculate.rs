@@ -104,20 +104,48 @@ speculate! {
 
         context "nested context with additional details" {
             before {
-              let three = two + ONE;
+                let three = two + ONE;
             }
 
             it can_add_stuff_in_nested_context {
-                    assert_eq!(three, add(two, ONE));
+                assert_eq!(three, add(two, ONE));
             }
         }
     }
 }
 ```
 
+## Code Formatting
+
+**Important:** Rust's `rustfmt` cannot automatically format code inside procedural macro invocations like `speculate!`. This is a known limitation - rustfmt only formats inside declarative macros (`macro_rules!`), not procedural macros.
+
+Therefore, you must **manually ensure proper indentation** inside `speculate!` blocks:
+
+- Use 4 spaces for indentation (no tabs)
+- Maintain consistent indentation levels
+- Follow the examples in the README and test files
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+### Code Style Requirements
+
+When contributing, please ensure:
+
+1. **Indentation inside `speculate!` blocks**: Use exactly 4 spaces (no tabs)
+
+   - This cannot be automatically checked by rustfmt
+   - Review your code carefully before submitting
+   - Follow the indentation pattern in existing test files
+
+2. **Run `cargo +nightly fmt`** before committing to format code outside macros
+
+3. **All tests pass**: Run `cargo test` to verify
+
+4. **No clippy warnings**: Run `cargo clippy` to check for issues
+
+The CI will check formatting and run tests, but **manual indentation inside macros must be verified by the contributor**.
 
 ## License
 

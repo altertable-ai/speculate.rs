@@ -1,2 +1,9 @@
 hard_tabs = false
 tab_spaces = 4
+
+# Note: rustfmt cannot format inside procedural macro invocations like speculate!
+# The settings below enable unstable features for other formatting improvements,
+# but code inside speculate! blocks must be manually formatted.
+unstable_features = true
+format_strings = true
+normalize_comments = true

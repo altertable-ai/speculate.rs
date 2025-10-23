@@ -11,14 +11,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Rust
+      - name: Setup Rust Stable
         uses: actions-rs/toolchain@v1
         with:
           toolchain: 1.89.0
-          components: rustfmt, clippy
+          components: clippy
+
+      - name: Setup Rust Nightly
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          components: rustfmt
+          override: false
 
       - name: Format
-        run: cargo fmt --all -- --check
+        run: cargo +nightly fmt --all -- --check
 
       - name: Lint
         run: cargo clippy --all-targets --all-features -- -D warnings
