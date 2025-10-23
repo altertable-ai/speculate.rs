@@ -1,4 +1,4 @@
-use crate::block::{Bench, Block, Describe, It};
+use crate::block::{Block, Describe, It};
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote_spanned, ToTokens};
 
@@ -11,7 +11,6 @@ impl Generate for Block {
         match self {
             Block::Describe(describe) => describe.generate(up),
             Block::It(it) => it.generate(up),
-            Block::Bench(bench) => bench.generate(up),
             Block::Item(item) => item.into_token_stream(),
         }
     }
@@ -19,7 +18,7 @@ impl Generate for Block {
 
 impl Generate for Describe {
     fn generate(mut self, up: Option<&Describe>) -> TokenStream {
-        if let Some(ref up) = up {
+        if let Some(up) = up {
             self.before = up
                 .before
                 .iter()
@@ -38,19 +37,19 @@ impl Generate for Describe {
         let name = &self.name;
 
         quote_spanned!(name.span() =>
-            mod #name {
-                #[allow(unused_imports)]
-                use super::*;
+        mod #name {
+        #[allow(unused_imports)]
+        use super::*;
 
-                #(#items)*
-            }
+        #(#items)*
+        }
         )
     }
 }
 
 impl Generate for It {
     fn generate(self, up: Option<&Describe>) -> TokenStream {
-        let blocks = if let Some(ref up) = up {
+        let blocks = if let Some(up) = up {
             up.before
                 .iter()
                 .chain(Some(self.block).iter())
@@ -63,42 +62,15 @@ impl Generate for It {
 
         let stmts = flatten_blocks(blocks);
 
-        let name = Ident::new(&format!("test_{}", self.name), self.name.span());
+        let name = Ident::new(&self.name.to_string(), self.name.span());
         let attributes = self.attributes;
 
         quote_spanned!(name.span() =>
-            #[test]
-            #(#attributes)*
-            fn #name() {
-                #(#stmts)*
-            }
-        )
-    }
-}
-
-impl Generate for Bench {
-    fn generate(self, up: Option<&Describe>) -> TokenStream {
-        let blocks = if let Some(ref up) = up {
-            up.before
-                .iter()
-                .chain(Some(self.block).iter())
-                .chain(up.after.iter())
-                .cloned()
-                .collect()
-        } else {
-            vec![self.block]
-        };
-
-        let stmts = flatten_blocks(blocks);
-
-        let name = Ident::new(&format!("bench_{}", self.name), self.name.span());
-        let ident = self.ident;
-
-        quote_spanned!(name.span() =>
-            #[bench]
-            fn #name(#ident: &mut ::test::Bencher) {
-                #(#stmts)*
-            }
+          #[test]
+          #(#attributes)*
+          fn #name() {
+            #(#stmts)*
+          }
         )
     }
 }

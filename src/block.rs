@@ -1,74 +1,95 @@
 use proc_macro2::Span;
-use syn::{alt, braces, call, custom_keyword, do_parse, many0, named, punct, syn, synom::Synom};
+use syn::parse::{Parse, ParseStream, Result};
 use unicode_xid::UnicodeXID;
+
+// Define custom keywords
+mod kw {
+    syn::custom_keyword!(describe);
+    syn::custom_keyword!(context);
+    syn::custom_keyword!(it);
+    syn::custom_keyword!(test);
+    syn::custom_keyword!(before);
+    syn::custom_keyword!(after);
+}
 
 pub struct Root(pub(crate) Describe);
 
-impl Synom for Root {
-    named!(parse -> Self, do_parse!(
-        mut content: many0!(syn!(DescribeBlock)) >>
+impl Parse for Root {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let mut before = vec![];
+        let mut after = vec![];
+        let mut blocks = vec![];
 
-        ({
-            let mut before = vec![];
-            let mut after  = vec![];
-            let mut blocks = vec![];
-
-            for block in content {
-                match block {
-                    DescribeBlock::Regular(block) => blocks.push(block),
-                    DescribeBlock::Before(block)  => before.push(block),
-                    DescribeBlock::After(block)   => after.push(block)
-                }
+        while !input.is_empty() {
+            let block = input.parse::<DescribeBlock>()?;
+            match block {
+                DescribeBlock::Regular(block) => blocks.push(block),
+                DescribeBlock::Before(block) => before.push(block),
+                DescribeBlock::After(block) => after.push(block),
             }
+        }
 
-            Root(Describe {
-                name: syn::Ident::new("speculate", Span::call_site()),
-                before, after, blocks
-            })
-        })
-    ));
+        Ok(Root(Describe {
+            name: syn::Ident::new("speculate", Span::call_site()),
+            before,
+            after,
+            blocks,
+        }))
+    }
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Clone)]
 pub enum Block {
     Describe(Describe),
     It(It),
-    Bench(Bench),
     Item(syn::Item),
 }
 
-impl Synom for Block {
-    named!(parse -> Self, alt!(
-        syn!(Describe)  => { Block::Describe }
-        |
-        syn!(It)        => { Block::It }
-        |
-        syn!(Bench)     => { Block::Bench }
-        |
-        syn!(syn::Item) => { Block::Item }
-    ));
+impl Parse for Block {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let lookahead = input.lookahead1();
+
+        // Try to parse as Describe
+        if lookahead.peek(kw::describe) || lookahead.peek(kw::context) {
+            return Ok(Block::Describe(input.parse()?));
+        }
+
+        // Try to parse as It (which can start with attributes or it/test keywords)
+        if lookahead.peek(syn::Token![#]) || lookahead.peek(kw::it) || lookahead.peek(kw::test) {
+            return Ok(Block::It(input.parse()?));
+        }
+
+        // Otherwise parse as Item
+        Ok(Block::Item(input.parse()?))
+    }
 }
 
+#[allow(clippy::large_enum_variant)]
 enum DescribeBlock {
     Regular(Block),
     Before(syn::Block),
     After(syn::Block),
 }
 
-impl Synom for DescribeBlock {
-    named!(parse -> Self, alt!(
-        do_parse!(
-            custom_keyword!(before)             >>
-            block: syn!(syn::Block)             >>
-            (DescribeBlock::Before(block))      )
-        |
-        do_parse!(
-            custom_keyword!(after)              >>
-            block: syn!(syn::Block)             >>
-            (DescribeBlock::After(block))       )
-        |
-        syn!(Block) => { DescribeBlock::Regular }
-    ));
+impl Parse for DescribeBlock {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let lookahead = input.lookahead1();
+
+        if lookahead.peek(kw::before) {
+            input.parse::<kw::before>()?;
+            let block = input.parse::<syn::Block>()?;
+            return Ok(DescribeBlock::Before(block));
+        }
+
+        if lookahead.peek(kw::after) {
+            input.parse::<kw::after>()?;
+            let block = input.parse::<syn::Block>()?;
+            return Ok(DescribeBlock::After(block));
+        }
+
+        Ok(DescribeBlock::Regular(input.parse()?))
+    }
 }
 
 #[derive(Clone)]
@@ -79,19 +100,31 @@ pub struct Describe {
     pub blocks: Vec<Block>,
 }
 
-impl Synom for Describe {
-    named!(parse -> Self, do_parse!(
-        alt!(custom_keyword!(describe) | custom_keyword!(context))  >>
-        name: syn!(syn::LitStr)                                     >>
-        root: braces!(syn!(Root))                                   >>
+impl Parse for Describe {
+    fn parse(input: ParseStream) -> Result<Self> {
+        // Parse 'describe' or 'context'
+        let lookahead = input.lookahead1();
+        if lookahead.peek(kw::describe) {
+            input.parse::<kw::describe>()?;
+        } else if lookahead.peek(kw::context) {
+            input.parse::<kw::context>()?;
+        } else {
+            return Err(lookahead.error());
+        }
 
-        ({
-            let mut describe = (root.1).0;
+        // Parse the name
+        let name_lit = input.parse::<syn::LitStr>()?;
 
-            describe.name = litstr_to_ident(&name);
-            describe
-        })
-    ));
+        // Parse the braced content
+        let content;
+        syn::braced!(content in input);
+        let root = content.parse::<Root>()?;
+
+        let mut describe = root.0;
+        describe.name = litstr_to_ident(&name_lit);
+
+        Ok(describe)
+    }
 }
 
 #[derive(Clone)]
@@ -101,47 +134,33 @@ pub struct It {
     pub block: syn::Block,
 }
 
-impl Synom for It {
-    named!(parse -> Self, do_parse!(
-        attrs:   many0!(call!(syn::Attribute::parse_outer))         >>
+impl Parse for It {
+    fn parse(input: ParseStream) -> Result<Self> {
+        // Parse attributes
+        let attrs = input.call(syn::Attribute::parse_outer)?;
 
-        alt!(custom_keyword!(it) | custom_keyword!(test))           >>
+        // Parse 'it' or 'test'
+        let lookahead = input.lookahead1();
+        if lookahead.peek(kw::it) {
+            input.parse::<kw::it>()?;
+        } else if lookahead.peek(kw::test) {
+            input.parse::<kw::test>()?;
+        } else {
+            return Err(lookahead.error());
+        }
 
-        name:    syn!(syn::LitStr)                                  >>
-        block:   syn!(syn::Block)                                   >>
+        // Parse the name as an identifier
+        let name = input.parse::<syn::Ident>()?;
 
-        (It {
-            name: litstr_to_ident(&name),
+        // Parse the block
+        let block = input.parse::<syn::Block>()?;
+
+        Ok(It {
+            name,
             attributes: attrs,
-            block
+            block,
         })
-    ));
-}
-
-#[derive(Clone)]
-pub struct Bench {
-    pub name: syn::Ident,
-    pub ident: syn::Ident,
-    pub block: syn::Block,
-}
-
-impl Synom for Bench {
-    named!(parse -> Self, do_parse!(
-        alt!(custom_keyword!(bench) | custom_keyword!(test))        >>
-
-        name:  syn!(syn::LitStr)                                    >>
-
-        punct!(|)                                                   >>
-        ident: syn!(syn::Ident)                                     >>
-        punct!(|)                                                   >>
-
-        block: syn!(syn::Block)                                     >>
-
-        (Bench {
-            name: litstr_to_ident(&name),
-            ident, block
-        })
-    ));
+    }
 }
 
 fn litstr_to_ident(l: &syn::LitStr) -> syn::Ident {

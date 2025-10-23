@@ -1,28 +1,27 @@
 [package]
 name = "speculate"
-version = "0.1.2"
-authors = ["Utkarsh Kukreti <utkarshkukreti@gmail.com>", "Grégoire Geis <git@gregoirege.is>"]
+version = "1.0.0"
+authors = ["Sylvain Utard <sylvain@altertable.ai>", "Utkarsh Kukreti <utkarshkukreti@gmail.com>", "Grégoire Geis <git@gregoirege.is>"]
 description = "An RSpec inspired minimal testing framework for Rust."
 repository = "https://github.com/utkarshkukreti/speculate.rs"
 readme = "README.md"
 license = "MIT"
-edition = "2018"
+edition = "2021"
 categories = ["development-tools::testing"]
 keywords = ["rspec", "test", "testing", ]
 
 [dependencies]
 # Full features are needed for Syn, in order to have the Item enum.
-syn = { version = "^0.14", features = [ "full" ] }
+syn = { version = "^2.0.107", features = [ "full" ] }
 
 # Nightly feature is required to preserve span information.
-proc-macro2 = { version = "^0.4", features = [ "nightly" ] }
+proc-macro2 = { version = "^1.0.101" }
 
-quote = "^0.6"
-unicode-xid = "^0.1"
+quote = "^1.0.41"
+unicode-xid = "^0.2.6"
 
 [lib]
 proc-macro = true
 
 [features]
 default = []
-nightly = []

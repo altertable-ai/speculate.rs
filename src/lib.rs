@@ -13,22 +13,10 @@ use quote::quote;
 mod block;
 mod generator;
 
-#[cfg(not(feature = "nightly"))]
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-#[cfg(feature = "nightly")]
-fn get_root_name() -> proc_macro2::Ident {
-    let start_line = proc_macro::Span::call_site().start().line;
-    let module_name = format!("speculate_{}", start_line);
-
-    syn::Ident::new(&module_name, proc_macro2::Span::call_site())
-}
-
-// TODO: Get rid of this once proc_macro_span stabilises
-#[cfg(not(feature = "nightly"))]
 static GLOBAL_SPECULATE_COUNT: AtomicUsize = AtomicUsize::new(0);
 
-#[cfg(not(feature = "nightly"))]
 fn get_root_name() -> proc_macro2::Ident {
     let count = GLOBAL_SPECULATE_COUNT.fetch_add(1, Ordering::SeqCst);
     let module_name = format!("speculate_{}", count);
@@ -44,10 +32,10 @@ fn get_root_name() -> proc_macro2::Ident {
 ///   readability. Can be arbitrarily nested.
 ///
 /// * `before` - contains setup code that's inserted before every sibling and nested
-///   `it` and `bench` blocks.
+///   `it` blocks.
 ///
 /// * `after` - contains teardown code that's inserted after every sibling and
-///   nested `it` and `bench` blocks.
+///   nested `it` blocks.
 ///
 /// * `it` (or its alias `test`) - contains tests.
 ///
@@ -57,7 +45,7 @@ fn get_root_name() -> proc_macro2::Ident {
 ///   #[macro_use] extern crate speculate as other_speculate;
 ///   # fn main() {}
 ///   # speculate! {
-///   it "can add 1 and 2" {
+///   it can_add_1_and_2 {
 ///       assert_eq!(1 + 2, 3);
 ///   }
 ///   # }
@@ -70,33 +58,18 @@ fn get_root_name() -> proc_macro2::Ident {
 ///   # fn main() {}
 ///   # speculate! {
 ///   #[ignore]
-///   test "ignore" {
+///   test ignore {
 ///       assert_eq!(1, 2);
 ///   }
 ///
 ///   #[should_panic]
-///   test "should panic" {
+///   test should_panic {
 ///       assert_eq!(1, 2);
 ///   }
 ///
 ///   #[should_panic(expected = "foo")]
-///   test "should panic with foo" {
+///   test should_panic_with_foo {
 ///       panic!("foo");
-///   }
-///   # }
-///   ```
-///
-/// * `bench` - contains benchmarks (using [`Bencher`](https://doc.rust-lang.org/test/struct.Bencher.html)).
-///
-///   For example:
-///
-///   ```rust
-///   #[macro_use] extern crate speculate as other_speculate;
-///   # fn main() {}
-///   # speculate! {
-///   bench "xor 1 to 1000" |b| {
-///       // Here, `b` is a `test::Bencher`.
-///       b.iter(|| (0..1000).fold(0, |a, b| a ^ b));
 ///   }
 ///   # }
 ///   ```
@@ -126,12 +99,12 @@ fn get_root_name() -> proc_macro2::Ident {
 ///             let two = ONE + ONE;
 ///         }
 ///
-///         it "can add stuff" {
+///         it can_add_stuff {
 ///             assert_eq!(ONE, add(ZERO, ONE));
 ///             assert_eq!(two, add(ONE, ONE));
 ///         }
 ///
-///         it "can subtract stuff" {
+///         it can_subtract_stuff {
 ///             assert_eq!(ZERO, sub(ONE, ONE));
 ///             assert_eq!(ONE, sub(two, ONE));
 ///         }

@@ -22,7 +22,7 @@ speculate! {
         assert_eq!(i, 6);
     }
 
-    it "works at level 1!" {
+    it works_at_level_1 {
         assert_eq!(i, zero() + 1);
         i = 5;
     }
@@ -33,7 +33,7 @@ speculate! {
             i = 1;
         }
 
-        it "works at level 2!" {
+        it works_at_level_2 {
             assert_eq!(i, 1);
             i = 4;
         }
@@ -49,7 +49,7 @@ speculate! {
                 i = 2;
             }
 
-            test "works at level 3!" {
+            test works_at_level_3 {
                 assert_eq!(i, 2);
                 i = 3;
             }
@@ -60,13 +60,13 @@ speculate! {
             }
         }
 
-        it "works at level 2 after context!" {
+        it works_at_level_2_after_context {
             assert_eq!(i, 1);
             i = 4;
         }
     }
 
-    it "works at level 1 after describe!" {
+    it works_at_level_1_after_describe {
         assert_eq!(i, zero() + 1);
         i = 5;
     }
@@ -84,12 +84,12 @@ mod ec2 {
 
     speculate! {
         before {}
-        it "works" {}
+        it works {}
     }
 
     speculate! {
         // Many modules in a same scope!
-        it "works again" {}
+        it works_again {}
     }
 }
 
@@ -97,7 +97,7 @@ mod ec3 {
     use other_speculate::speculate;
 
     speculate! {
-        it "foo" {}
+        it foo {}
     }
 }
 
@@ -114,7 +114,7 @@ mod ec5 {
 
     speculate! {
         before {}
-        it "foo" {}
+        it foo {}
         after {}
     }
 }
@@ -124,17 +124,17 @@ mod attributes {
 
     speculate! {
         #[ignore]
-        test "ignore" {
+        test ignore {
             assert_eq!(1, 2);
         }
 
         #[should_panic]
-        test "should panic" {
+        test should_panic {
             assert_eq!(1, 2);
         }
 
         #[should_panic(expected = "foo")]
-        test "should panic with foo" {
+        test should_panic_with_foo {
             panic!("foo");
         }
     }
